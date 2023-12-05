@@ -1,2 +1,2 @@
-# fluent-bit-additional-demos
+# Fluentbit Additional Demos
 Additional Fluent Bit demo configurations
