@@ -1,0 +1,1 @@
+curl -X POST -d {\"cmd\":\"date\"} -H "content-type: application/json" localhost:8080
