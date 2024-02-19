@@ -26,7 +26,7 @@ To build and run the following demo, you'll need:
 
 The solution operates in the following manner:
 
-![](.\flow-diagram.png)
+![](./flow-diagram.png)
 
 
 
