@@ -64,7 +64,7 @@ public class FLBCommunication {
       }
       String obj = (String) iter.next();
       {
-        formattedStr = formattedStr + "{" + Integer.toString(ctr) + "='" + obj + "'}\n";
+        formattedStr = formattedStr + "{" + Integer.toString(ctr) + ":'" + obj + "'}\n";
       }
       ctr++;
     }

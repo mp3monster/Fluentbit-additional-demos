@@ -30,13 +30,13 @@ public class SlackActions {
 
   private static final String CHANNEL_SLACK_ATTRIBUTE = "channel";
 
-  private static final String SLACKTIMELIMIT = "SLACKTIMELIMIT";
+  private static final String SLACKTIMELIMIT = "SLACK-TIME-LIMIT";
 
-  private static final String SLACKMSGLIMIT = "SLACKMSGLIMIT";
+  private static final String SLACKMSGLIMIT = "SLACK-MSG-LIMIT";
 
-  private static final String SLACKTOKEN = "SLACKTOKEN";
+  private static final String SLACKTOKEN = "SLACK-TOKEN";
 
-  private static final String SLACKCHANNELID = "SLACKCHANNELID";
+  private static final String SLACKCHANNELID = "SLACK-CHANNEL-ID";
 
   private static final int DEFAULTMSGLIMIT = 5;
 
@@ -50,7 +50,7 @@ public class SlackActions {
 
   // curl -d "channel=CMM13QSBB" -d "limit=3" -d "include_all_metadata=false" -H
   // "Authorization: Bearer
-  // xoxb-735037803329-6179690984166-MLSoE7JpBbyIQ2i1MDkFmqQY" -X POST
+  // xoxb-YOUR TOKEN HERE -X POST
   // https://slack.com/api/conversations.history
 
   private String channelId;
@@ -65,13 +65,20 @@ public class SlackActions {
 
     channelId = config.getOrDefault(SLACKCHANNELID, null);
     if ((channelId == null) || (channelId.trim().length() == 0)) {
-      FLBSocialCommandResource.LOGGER.info("SLACKCHANNELID is not set");
-    }
-    mySlackToken = config.getOrDefault(SLACKTOKEN, null);
-    if ((mySlackToken == null) || (mySlackToken.trim().length() == 0)) {
-      FLBSocialCommandResource.LOGGER.info("SlackToken is not set");
+      channelId = System.getenv(SLACKCHANNELID);
+      if ((channelId == null) || (channelId.trim().length() == 0)) {
+        FLBSocialCommandResource.LOGGER.info("SLACKCHANNELID is not set");
+      }
     }
 
+    mySlackToken = config.getOrDefault(SLACKTOKEN, null);
+    if ((mySlackToken == null) || (mySlackToken.trim().length() == 0)) {
+      mySlackToken = System.getenv(SLACKTOKEN);
+      if ((mySlackToken == null) || (mySlackToken.trim().length() == 0)) {
+
+        FLBSocialCommandResource.LOGGER.info("SlackToken is not set");
+      }
+    }
     try {
       myMsgCountLimit = Integer.parseInt(config.getOrDefault(SLACKMSGLIMIT, Integer.toString(DEFAULTMSGLIMIT)));
     } catch (NumberFormatException err) {
@@ -97,10 +104,15 @@ public class SlackActions {
   }
 
   private String findInResponse(String path, String identifier, String descriptor) {
+    FLBSocialCommandResource.LOGGER
+        .fine("checking response with " + path + " identifier " + identifier + " descriptor " + descriptor);
+
     String command = null;
     String commandCandidate = null;
     List result = myJsonCtx.read(path);
     if (!result.isEmpty()) {
+      FLBSocialCommandResource.LOGGER.fine("found possible response");
+
       Iterator iter = result.iterator();
       while (iter.hasNext()) {
         Object test = iter.next();
@@ -130,8 +142,7 @@ public class SlackActions {
       client = ClientBuilder.newClient();
       WebTarget target = client.target(SLACKURL);
       Response response = target.request()
-          .header(HttpHeaders.AUTHORIZATION, BEARER_SLACK_HDR + mySlackToken)
-          .post(Entity.form(initialiseParams()));
+          .header(HttpHeaders.AUTHORIZATION, BEARER_SLACK_HDR + mySlackToken).post(Entity.form(initialiseParams()));
 
       String payload = response.readEntity(String.class);
       client.close();
