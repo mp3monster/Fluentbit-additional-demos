@@ -1,3 +1,19 @@
+function getOS()
+  local osname
+  -- ask LuaJIT first
+  if jit then
+    return jit.os
+  end
+
+  -- Unix, Linux variants
+  local fh, err = assert(io.popen("uname -o 2>/dev/null", "r"))
+  if fh then
+    osname = fh:read()
+  end
+
+  return osname or "Windows"
+end
+
 function printRecord(record)
   for key, value in pairs(record) do
     local elementType = type(value)
@@ -16,6 +32,11 @@ function cb_osCommand(tag, timestamp, record)
   local commadAttribute = "cmd"
   local command = "ls"
   --[[printRecord(record)--]]
+  printRecord(record)
+
+  if (getOS() == "Windows") then
+    command = "dir"
+  end
 
   if (record[commadAttribute] ~= nil) then
     command = record[commadAttribute]
