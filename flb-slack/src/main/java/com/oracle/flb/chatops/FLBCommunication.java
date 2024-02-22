@@ -9,7 +9,6 @@ public class FLBCommunication {
   private List<String> rawEvents = new ArrayList<String>();
   private String command = null;
   private String FLBNode = null;
-  private boolean responseOk = false;
 
   // @Override
   public List<String> getRawEvents() {
@@ -27,23 +26,12 @@ public class FLBCommunication {
     this.rawEvents = rawEvents;
   }
 
-  public boolean getOK() {
-    return this.responseOk;
-  }
-
-  public void setOK(boolean isOk) {
-    this.responseOk = isOk;
-  }
-
   public String getCommand() {
     return this.command;
   }
 
   public void setCommand(String command) {
     this.command = command;
-    if (command != null) {
-      responseOk = true;
-    }
   }
 
   public String getFLBNode() {
@@ -52,6 +40,10 @@ public class FLBCommunication {
 
   public void setFLBNode(String FLBNode) {
     this.FLBNode = FLBNode;
+  }
+
+  public boolean canAction() {
+    return ((command != null) && (FLBNode != null) && (command.length() > 0) && (FLBNode.length() > 0));
   }
 
   private String rawEventsStr() {
@@ -71,11 +63,14 @@ public class FLBCommunication {
     return formattedStr + "]}";
   }
 
+  public String summaryString() {
+    return "{\"isOk\" : \"" + canAction() + "\", \"command\":\"" + getCommand() + "\", \"FLBNode\"=\"" + getFLBNode()
+        + "\"}";
+  }
+
   public String toString() {
     return "{" +
-        "isOk = '" + responseOk + "'" +
-        ", command='" + getCommand() + "'" +
-        ", FLBNode='" + getFLBNode() + "'\n" +
+        "\"Summary\" = " + summaryString() + ",\n" +
         ", rawEvents=" + rawEventsStr() +
         "}";
   }

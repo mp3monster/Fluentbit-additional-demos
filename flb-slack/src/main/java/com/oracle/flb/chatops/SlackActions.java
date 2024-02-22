@@ -43,7 +43,7 @@ public class SlackActions {
   private static final String FIND_COMMANDS_JSONPATH = "$.messages[*].text";
   private static final String FIND_OK_JSONPATH = "$.ok";
 
-  private static final String FLB = "FLB:";
+  private static final String FLB = "FLBCmd:";
   private static final String FLBNODE = "FLBNode:";
 
   private static final String SLACKURL = "https://slack.com/api/conversations.history";
@@ -60,18 +60,20 @@ public class SlackActions {
   private Integer myMsgTimeLimit = null;
   FLBCommunication myResults = new FLBCommunication();
   private ReadContext myJsonCtx = null;
+  private String alertId = "";
 
-  SlackActions(Map<String, String> config) {
+  public static Map<String, String> addProperties(Map<String, String> config) {
 
-    channelId = config.getOrDefault(SLACKCHANNELID, null);
+    String channelId = config.getOrDefault(SLACKCHANNELID, null);
     if ((channelId == null) || (channelId.trim().length() == 0)) {
       channelId = System.getenv(SLACKCHANNELID);
       if ((channelId == null) || (channelId.trim().length() == 0)) {
         FLBSocialCommandResource.LOGGER.info("SLACKCHANNELID is not set");
       }
     }
+    config.put(SLACKCHANNELID, channelId);
 
-    mySlackToken = config.getOrDefault(SLACKTOKEN, null);
+    String mySlackToken = config.getOrDefault(SLACKTOKEN, null);
     if ((mySlackToken == null) || (mySlackToken.trim().length() == 0)) {
       mySlackToken = System.getenv(SLACKTOKEN);
       if ((mySlackToken == null) || (mySlackToken.trim().length() == 0)) {
@@ -79,16 +81,36 @@ public class SlackActions {
         FLBSocialCommandResource.LOGGER.info("SlackToken is not set");
       }
     }
+    config.put(SLACKTOKEN, mySlackToken);
+
+    int msgCountLimit = DEFAULTMSGLIMIT;
     try {
-      myMsgCountLimit = Integer.parseInt(config.getOrDefault(SLACKMSGLIMIT, Integer.toString(DEFAULTMSGLIMIT)));
+      msgCountLimit = Integer.parseInt(config.getOrDefault(SLACKMSGLIMIT, Integer.toString(DEFAULTMSGLIMIT)));
     } catch (NumberFormatException err) {
-      myMsgCountLimit = DEFAULTMSGLIMIT;
       FLBSocialCommandResource.LOGGER.info("Ignoring config msg limit value - couldnt process");
     }
+    config.put(SLACKMSGLIMIT, Integer.toString(msgCountLimit));
 
+    int myMsgTimeLimit = 0;
     if (config.containsKey(SLACKTIMELIMIT)) {
-      myMsgTimeLimit = new Integer(config.get(SLACKTIMELIMIT));
+      try {
+        myMsgTimeLimit = new Integer(config.get(SLACKTIMELIMIT));
+      } catch (NumberFormatException err) {
+        FLBSocialCommandResource.LOGGER.info("Ignoring config time limit value - couldnt process");
+      }
     }
+    config.put(SLACKTIMELIMIT, Integer.toString(myMsgTimeLimit));
+
+    return config;
+  }
+
+  SlackActions(Map<String, String> config) {
+
+    channelId = System.getenv(SLACKCHANNELID);
+
+    mySlackToken = System.getenv(SLACKTOKEN);
+    myMsgCountLimit = Integer.parseInt(config.getOrDefault(SLACKMSGLIMIT, Integer.toString(DEFAULTMSGLIMIT)));
+    myMsgTimeLimit = new Integer(config.get(SLACKTIMELIMIT));
 
   }
 
@@ -103,32 +125,52 @@ public class SlackActions {
     return entity;
   }
 
+  private String extractCommand(String identifier, String candidate, String command) {
+    String commandCandidate = candidate.substring(candidate.indexOf(identifier) + identifier.length()).trim();
+    if (commandCandidate.length() > 0) {
+      int space = commandCandidate.indexOf(" ");
+      int quote = commandCandidate.indexOf("\"");
+      if ((quote > 0) && (quote < space)) {
+        space = quote;
+      }
+
+      if (space > 0) {
+        commandCandidate = commandCandidate.substring(0, space);
+      }
+      commandCandidate = commandCandidate.trim();
+      if (commandCandidate.length() > 0) {
+        if (command != null) {
+          FLBSocialCommandResource.LOGGER
+              .info("extractCommand replacing " + command + " with " + commandCandidate);
+        }
+        command = commandCandidate;
+      }
+    }
+    return command;
+  }
+
   private String findInResponse(String path, String identifier, String descriptor) {
     FLBSocialCommandResource.LOGGER
-        .fine("checking response with " + path + " identifier " + identifier + " descriptor " + descriptor);
+        .fine("checking response with " + path + " identifier " + identifier + " for descriptor " + descriptor);
 
     String command = null;
     String commandCandidate = null;
     List result = myJsonCtx.read(path);
     if (!result.isEmpty()) {
-      FLBSocialCommandResource.LOGGER.fine("found possible response");
+      FLBSocialCommandResource.LOGGER.finer("findInResponse found json candidate for " + descriptor);
 
       Iterator iter = result.iterator();
       while (iter.hasNext()) {
-        Object test = iter.next();
-        if ((test instanceof String) && (((String) test).startsWith(identifier))) {
-          commandCandidate = ((String) test).substring(identifier.length()).trim();
-          if (commandCandidate.length() > 0) {
-            if (command == null) {
-              command = commandCandidate;
-            } else {
-              myResults.addRawEvent("Ignoring " + descriptor + "= " + commandCandidate);
-            }
-          }
+        String test = (String) iter.next();
+        if (test.contains(identifier)) {
+          FLBSocialCommandResource.LOGGER.finer("findInResponse testing:" + test);
+          command = extractCommand(identifier, test, command);
         }
       }
     }
+
     return command;
+
   }
 
   private boolean okResponse() {
@@ -136,7 +178,7 @@ public class SlackActions {
     return result.booleanValue();
   }
 
-  public FLBCommunication checkForAction(String alertId) {
+  public FLBCommunication checkForAction() {
     Client client = null;
     try {
       client = ClientBuilder.newClient();
