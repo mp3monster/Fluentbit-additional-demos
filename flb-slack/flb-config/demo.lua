@@ -34,12 +34,13 @@ function cb_osCommand(tag, timestamp, record)
   --[[printRecord(record)--]]
   printRecord(record)
 
-  if (getOS() == "Windows") then
-    command = "dir"
-  end
-
   if (record[commadAttribute] ~= nil) then
     command = record[commadAttribute]
+    if (getOS() == "Windows") then
+      command = "cmd_" + command + ".bat"
+    else
+      command = "cmd_" + command + ".sh"
+    end
   end
 
   local fullCommand = command .. " > remotecmd.lua.out"
