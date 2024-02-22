@@ -1,0 +1,1 @@
+curl -d "text=Hi I am a bot that can post messages to the %slack-channel-name% channel." -d "channel=%SLACK-CHANNEL-ID%" -H "Authorization: Bearer %SLACK-TOKEN%" -X POST https://slack.com/api/chat.postMessage
