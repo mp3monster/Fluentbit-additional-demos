@@ -32,20 +32,21 @@ function cb_osCommand(tag, timestamp, record)
   local commadAttribute = "cmd"
   local command = "ls"
   --[[printRecord(record)--]]
-  printRecord(record)
 
   if (record[commadAttribute] ~= nil) then
     command = record[commadAttribute]
     if (getOS() == "Windows") then
-      command = "cmd_" + command + ".bat"
+      command = "call cmd_" .. command .. ".bat"
     else
-      command = "cmd_" + command + ".sh"
+      command = "source cmd_" .. command .. ".sh"
     end
+  else
+    print("Lua no command identified")
   end
 
   local fullCommand = command .. " > remotecmd.lua.out"
   print(fullCommand)
   local runCommandResult = os.execute(fullCommand)
-  print("response from exe command " .. runCommandResult)
+  print("response from exe command:" .. runCommandResult)
   return code, timestamp, record
 end
