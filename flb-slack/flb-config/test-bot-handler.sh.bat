@@ -1,0 +1,1 @@
+curl -X POST -d {\"cmd\":\"date\"} -H "content-type: application/json" %SOCIAL_NODE_ADDR%:%SOCIAL_NODE_PORT%
