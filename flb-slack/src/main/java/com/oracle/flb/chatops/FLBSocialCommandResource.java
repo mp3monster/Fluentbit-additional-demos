@@ -58,22 +58,25 @@ public class FLBSocialCommandResource {
     private String myFLBPort = FLB_DEFAULT_PORT;
     private int myRetryDelay = 60;
     private int myRetryCount = 0;
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH-mm-ss");
+    private static DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH-mm-ss");
     private Map<String, String> myEnvs = new HashMap<>();
 
-    private static String createFLBPayload(String command) {
-        return "{\"command\":\"" + command + "\"}\n";
+    private static String createFLBPayload(String command, String tag) {
+        return "{\"command\":\"" + command +
+                "\", \"time\":\"" + dtf.format(LocalDateTime.now()) +
+                "\", \"tagged\":\"" + tag +
+                "\"}\n";
     }
 
     private static boolean signalFLBNode(String node, String command, String tag) {
         boolean sent = true;
         Client client = null;
         String svr = "http://" + node;
-        LOGGER.info("Sending to FLB Node " + svr + " command " + createFLBPayload(command) + " tagged as " + tag);
+        LOGGER.info("Sending to FLB Node " + svr + " command " + createFLBPayload(command, tag) + " tagged as " + tag);
         try {
             client = ClientBuilder.newClient();
-            Response resp = client.target(svr).path(tag).request(MediaType.APPLICATION_JSON)
-                    .buildPost(json(createFLBPayload(command))).invoke();
+            Response resp = client.target(svr).path("command").request(MediaType.APPLICATION_JSON)
+                    .buildPost(json(createFLBPayload(command, tag))).invoke();
 
             sent = (resp.getStatus() >= 200) && (resp.getStatus() < 300);
             resp.close();
