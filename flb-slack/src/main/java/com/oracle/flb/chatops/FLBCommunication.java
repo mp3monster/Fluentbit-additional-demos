@@ -10,6 +10,11 @@ public class FLBCommunication {
   private String command = null;
   private String FLBNode = null;
 
+  /*
+   * This class exists largely to act as a carrier for the data elements we need
+   * to pass around. In includes the ability to populate an array of strings
+   * reflecting event related details we may wish to pass around.
+   */
   // @Override
   public List<String> getRawEvents() {
     return this.rawEvents;
@@ -46,6 +51,9 @@ public class FLBCommunication {
     return ((command != null) && (FLBNode != null) && (command.length() > 0) && (FLBNode.length() > 0));
   }
 
+  /*
+   * Takes the array of string and formats it into a readable form.
+   */
   private String rawEventsStr() {
     String formattedStr = "{[";
     Iterator iter = rawEvents.iterator();
@@ -63,11 +71,18 @@ public class FLBCommunication {
     return formattedStr + "]}";
   }
 
+  /*
+   * This constructs a JSON string that reflects the key values we need to look at
+   * for logging the object state
+   */
   public String summaryString() {
     return "{\"isOk\" : \"" + canAction() + "\", \"command\":\"" + getCommand() + "\", \"FLBNode\"=\"" + getFLBNode()
         + "\"}";
   }
 
+  /*
+   * implementation of the standard method
+   */
   public String toString() {
     return "{" +
         "\"Summary\" = " + summaryString() + ",\n" +
