@@ -12,20 +12,14 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Form;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.Response;
 import static jakarta.ws.rs.client.Entity.json;
-import java.util.concurrent.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -42,6 +36,8 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @ApplicationScoped
 @Path("/social")
 public class FLBSocialCommandResource {
+    private static final String FLB_SOCIAL = "FLBSocial";
+    private static final String NAME = "name";
     private static final String TESTFLB = "TESTFLB";
     private static final String TESTFLB_TAG = "TESTFLB-TAG";
     private static final String TESTFLB_PORT = "TESTFLB-PORT";
@@ -54,7 +50,7 @@ public class FLBSocialCommandResource {
     private static final String RETRYINTERVAL = "OPS_RETRYINTERVAL";
     private static final String RETRYCOUNT = "OPS_RETRYCOUNT";
 
-    static final Logger LOGGER = Logger.getLogger(FLBSocialCommandResource.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(FLBSocialCommandResource.class.getName());
     private String myFLBPort = FLB_DEFAULT_PORT;
     private int myRetryDelay = 60;
     private int myRetryCount = 0;
@@ -65,8 +61,8 @@ public class FLBSocialCommandResource {
         return "{\"command\":\"" + command + "\"}\n";
     }
 
-    private static void signalFLBNode(String node, String command, String tag) {
-
+    private static boolean signalFLBNode(String node, String command, String tag) {
+        boolean sent = true;
         Client client = null;
         String svr = "http://" + node;
         LOGGER.info("Sending to FLB Node " + svr + " command " + createFLBPayload(command) + " tagged as " + tag);
@@ -84,15 +80,33 @@ public class FLBSocialCommandResource {
             }
         }
 
+        return sent;
+
     }
 
-    private static class CheckerClass implements Runnable {
+    private static String prettyPrintMap(Map map) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Entry<String, String>> iter = map.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry<String, String> entry = iter.next();
+            sb.append(entry.getKey());
+            sb.append('=').append('"');
+            sb.append(entry.getValue());
+            sb.append('"');
+            if (iter.hasNext()) {
+                sb.append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
+    private static class ThreadedChannelChecker implements Runnable {
         private String id = "";
         private int retries = 0;
         private int delay = 0;
         Map<String, String> env = null;
 
-        CheckerClass(String instanceId, int retries, int delaySecs, Map<String, String> env) {
+        ThreadedChannelChecker(String instanceId, int retries, int delaySecs, Map<String, String> env) {
             this.id = instanceId;
             this.retries = retries;
             this.delay = delaySecs * 1000;
@@ -103,13 +117,13 @@ public class FLBSocialCommandResource {
 
         /**
          * @param alertId
-         * @return String
+         * @return FLBCommunication
          */
-        private FLBCommunication checkForAction(String alertId, Map<String, String> envs) {
+        private FLBCommunication checkForAction(
+                ActionsImplInterface action) {
             FLBCommunication comms = null;
             LOGGER.info("checkForAction commencing");
             try {
-                SlackActions action = new SlackActions(envs);
                 comms = action.checkForAction();
                 if (comms.getFLBNode() != null) {
                     LOGGER.info("---------WE HAVE A NODE -----------" + comms.getFLBNode());
@@ -129,18 +143,25 @@ public class FLBSocialCommandResource {
         public void run() {
             int counter = 0;
             try {
+                ActionsImplInterface action = SocialActionsFactory.getSocialChannelsActionImpl(env);
+                // new SlackActions(env);
                 while (counter < retries) {
-                    FLBCommunication action = checkForAction(id, env);
-                    if ((action != null) && action.canAction()) {
-                        signalFLBNode(action.getFLBNode(), action.getCommand(), id);
-                        LOGGER.info("Actioning:\n" + action.summaryString());
+                    FLBCommunication comms = checkForAction(action);
+                    if ((comms != null) && comms.canAction()) {
+                        boolean sent = signalFLBNode(comms.getFLBNode(), comms.getCommand(), id);
+                        if (sent) {
+                            LOGGER.info("Actioning:\n" + comms.summaryString());
+                        } else {
+                            LOGGER.info("Actioning failed:\n" + comms.summaryString());
+                        }
+                        action.sendMessage("Managed to send command to Node");
                         break;
                     }
                     counter++;
                     Thread.sleep(delay);
-                    // System.out.println("Thread ID: " + Thread.currentThread().threadId());
-                    LOGGER.info(
-                            "Thread ID: " + Thread.currentThread().getName() + ">>>>>>>>>>>>>> checked for command");
+                    LOGGER.finer(
+                            "Thread ID: " + Thread.currentThread().getName()
+                                    + ">>>>>>>>>>>>>> checked for action, sleeping for " + delay);
                 }
             } catch (Throwable thrown) {
                 LOGGER.warning("Checker Run error:" + thrown.toString());
@@ -152,20 +173,21 @@ public class FLBSocialCommandResource {
     }
 
     FLBSocialCommandResource() {
-        HelidonMdc.set("name", "FLBSocial");
+        HelidonMdc.set(NAME, FLB_SOCIAL);
         myEnvs.putAll(System.getenv());
+        LOGGER.finer("FLBSocialCommandResource - Envs obtained:" + prettyPrintMap(myEnvs));
 
         try {
             int aPort = Integer.parseInt(myEnvs.getOrDefault(PORT, FLB_DEFAULT_PORT));
             myFLBPort = Integer.toString(aPort);
         } catch (NumberFormatException numErr) {
-            LOGGER.warning("Couldn't process port override");
+            LOGGER.warning("FLBSocialCommandResource - Couldn't process port override");
         }
 
         try {
             myRetryCount = Integer.parseInt(myEnvs.getOrDefault(RETRYCOUNT, Integer.toString(DEFAULT_RETRY_COUNT)));
         } catch (NumberFormatException numErr) {
-            LOGGER.warning("Couldn't process retry count - using default");
+            LOGGER.warning("FLBSocialCommandResource - Couldn't process retry count - using default");
             myRetryCount = DEFAULT_RETRY_COUNT;
         }
 
@@ -173,11 +195,11 @@ public class FLBSocialCommandResource {
             myRetryDelay = Integer
                     .parseInt(myEnvs.getOrDefault(RETRYINTERVAL, Integer.toString(DEFAULT_RETRY_INTERVAL)));
         } catch (NumberFormatException numErr) {
-            LOGGER.warning("Couldn't process retry interval - using default");
+            LOGGER.warning("FLBSocialCommandResource - Couldn't process retry interval - using default");
             myRetryDelay = DEFAULT_RETRY_INTERVAL;
         }
 
-        myEnvs = SlackActions.addProperties(myEnvs);
+        myEnvs = SocialActionsFactory.addProperties(myEnvs);
     }
 
     /**
@@ -188,7 +210,8 @@ public class FLBSocialCommandResource {
     @Counted(name = FLBCommandMetrics.ALL_SOCIALS_NAME, absolute = true, description = FLBCommandMetrics.ALL_SOCIALS_DESCRIPTION)
     @Timed(name = FLBCommandMetrics.SOCIALS_TIMER_NAME, description = FLBCommandMetrics.SOCIALS_TIMER_DESCRIPTION, unit = MetricUnits.HOURS, absolute = true)
     public String getNoAlertId() {
-        CheckerClass checker = new CheckerClass(dtf.format(LocalDateTime.now()), myRetryCount, myRetryDelay, myEnvs);
+        ThreadedChannelChecker checker = new ThreadedChannelChecker(dtf.format(LocalDateTime.now()), myRetryCount,
+                myRetryDelay, myEnvs);
         checker.run();
         return "{getNoAlertId= " + checker.id + "}";
 
@@ -203,8 +226,8 @@ public class FLBSocialCommandResource {
     @Counted(name = FLBCommandMetrics.ALL_SOCIALS_NAME, absolute = true, description = FLBCommandMetrics.ALL_SOCIALS_DESCRIPTION)
     @Timed(name = FLBCommandMetrics.SOCIALS_TIMER_NAME, description = FLBCommandMetrics.SOCIALS_TIMER_DESCRIPTION, unit = MetricUnits.HOURS, absolute = true)
     public String postAlertNoId(String entity) {
-        // return "{postAlertNoId= " + checkForAction("") + "}";
-        CheckerClass checker = new CheckerClass(dtf.format(LocalDateTime.now()), myRetryCount, myRetryDelay, myEnvs);
+        ThreadedChannelChecker checker = new ThreadedChannelChecker(dtf.format(LocalDateTime.now()), myRetryCount,
+                myRetryDelay, myEnvs);
         checker.run();
         return "{postAlertNoId= " + checker.id + "}";
 
@@ -219,8 +242,8 @@ public class FLBSocialCommandResource {
     @Counted(name = FLBCommandMetrics.ALL_SOCIALS_NAME, absolute = true, description = FLBCommandMetrics.ALL_SOCIALS_DESCRIPTION)
     @Timed(name = FLBCommandMetrics.SOCIALS_TIMER_NAME, description = FLBCommandMetrics.SOCIALS_TIMER_DESCRIPTION, unit = MetricUnits.HOURS, absolute = true)
     public String putAlertNoId(String entity) {
-        // return "{PutNoAlertId= " + checkForAction("") + "}";
-        CheckerClass checker = new CheckerClass(dtf.format(LocalDateTime.now()), myRetryCount, myRetryDelay, myEnvs);
+        ThreadedChannelChecker checker = new ThreadedChannelChecker(dtf.format(LocalDateTime.now()), myRetryCount,
+                myRetryDelay, myEnvs);
         checker.run();
         return "{PutNoAlertId= " + checker.id + "}";
 
@@ -232,10 +255,8 @@ public class FLBSocialCommandResource {
     @Counted(name = FLBCommandMetrics.ALL_SOCIALS_NAME, absolute = true, description = FLBCommandMetrics.ALL_SOCIALS_DESCRIPTION)
     @Timed(name = FLBCommandMetrics.SOCIALS_TIMER_NAME, description = FLBCommandMetrics.SOCIALS_TIMER_DESCRIPTION, unit = MetricUnits.HOURS, absolute = true)
     public String postWithAlertId(@PathParam("alertId") String alertId) {
-
-        // return "{postWithAlertId= " + checkForAction(alertId) + ", alertId=\"" +
-        // alertId + "\"}";
-        CheckerClass checker = new CheckerClass(dtf.format(LocalDateTime.now()), myRetryCount, myRetryDelay, myEnvs);
+        ThreadedChannelChecker checker = new ThreadedChannelChecker(dtf.format(LocalDateTime.now()), myRetryCount,
+                myRetryDelay, myEnvs);
         checker.run();
         return "{postWithAlertId= " + checker.id + "}";
 
