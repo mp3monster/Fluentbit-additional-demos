@@ -1,7 +1,10 @@
 --[[ Determine which OS we're running on--]]
 function getOS()
   local osname
-
+  -- ask LuaJIT first
+  if jit then
+    return jit.os
+  end
   -- Unix, Linux variants
   local fh, err = assert(io.popen("uname -o 2>/dev/null", "r"))
   if fh then
@@ -34,12 +37,15 @@ For diagnostics the printRecord method can be used
 --]]
 function cb_osCommand(tag, timestamp, record)
   local code = 0
-  local commadAttribute = "cmd"
-  local command = "ls"
+  local commadAttribute = "command"
+  local command = ""
   --[[printRecord(record)--]]
+  printRecord(record)
 
   if (record[commadAttribute] ~= nil) then
     command = record[commadAttribute]
+
+    print("Will execute " .. command)
     if (getOS() == "Windows") then
       command = "call cmd_" .. command .. ".bat"
     else
@@ -50,7 +56,6 @@ function cb_osCommand(tag, timestamp, record)
   end
 
   local fullCommand = command .. " > remotecmd.lua.out"
-  print(fullCommand)
   local runCommandResult = os.execute(fullCommand)
   print("response from exe command:" .. runCommandResult)
   return code, timestamp, record
