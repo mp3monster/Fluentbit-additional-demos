@@ -1,3 +1,4 @@
+--[[ Determine which OS we're running on--]]
 function getOS()
   local osname
   -- ask LuaJIT first
@@ -14,6 +15,7 @@ function getOS()
   return osname or "Windows"
 end
 
+--[[ Pretty printer util for outputting the payload - here to help with diagnostics if needed--]]
 function printRecord(record)
   for key, value in pairs(record) do
     local elementType = type(value)
@@ -27,6 +29,13 @@ function printRecord(record)
   end
 end
 
+--[[ -This is the main function in the script and needs to be called. It retrieves from the
+payload the cmd attribute which will tell us which script to invoke.
+The script is assumed to be the cmd's value prefixed by cmd_ and post fixed with .sh or .bat
+the OS also impacts how we call the script file.
+The outcome of invoking the script is directed to remotecmd.lua.out
+For diagnostics the printRecord method can be used
+--]]
 function cb_osCommand(tag, timestamp, record)
   local code = 0
   local commadAttribute = "cmd"
