@@ -84,6 +84,10 @@ public class FLBSocialCommandResource {
 
     }
 
+    /*
+     * So we can examine data structures such as the environment variables very
+     * easily, this prints the contents of a map in a very readable manner
+     */
     private static String prettyPrintMap(Map map) {
         StringBuilder sb = new StringBuilder();
         Iterator<Entry<String, String>> iter = map.entrySet().iterator();
@@ -100,6 +104,12 @@ public class FLBSocialCommandResource {
         return sb.toString();
     }
 
+    /*
+     * This inner class provides the thread mechanisms to allow us to separate out
+     * the looking for a social channel response, and allow the inbound request to
+     * be returned, so we don't create any issues with HTTP timeouts, or creating
+     * back pressure as we wait on the user to act in the social channel
+     */
     private static class ThreadedChannelChecker implements Runnable {
         private String id = "";
         private int retries = 0;
@@ -172,6 +182,11 @@ public class FLBSocialCommandResource {
 
     }
 
+    /*
+     * Constructor for this resource which the container will interact with. We
+     * collect all the necessary environmental params ready. soon as a call is
+     * received we can get
+     */
     FLBSocialCommandResource() {
         HelidonMdc.set(NAME, FLB_SOCIAL);
         myEnvs.putAll(System.getenv());
