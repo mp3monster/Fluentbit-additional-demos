@@ -1,10 +1,6 @@
 --[[ Determine which OS we're running on--]]
 function getOS()
   local osname
-  -- ask LuaJIT first
-  if jit then
-    return jit.os
-  end
 
   -- Unix, Linux variants
   local fh, err = assert(io.popen("uname -o 2>/dev/null", "r"))
@@ -20,11 +16,11 @@ function printRecord(record)
   for key, value in pairs(record) do
     local elementType = type(value)
     if (elementType == "table") then
-      print(string.format("%s { %s = ", indent, key))
-      printDetails(value, indent .. " ")
+      print(string.format("%s { %s = ", key))
+      printDetails(value .. " ")
       print("}")
     else
-      print(string.format("%s %s = %s --> %s", indent, key, tostring(value), elementType))
+      print(string.format("%s %s = %s --> %s", "   ", key, tostring(value), elementType))
     end
   end
 end
