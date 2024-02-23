@@ -1,6 +1,7 @@
 
 package com.oracle.flb.chatops;
 
+import io.helidon.http.Status;
 import io.helidon.logging.common.HelidonMdc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.Consumes;
@@ -13,9 +14,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import static jakarta.ws.rs.client.Entity.json;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -68,9 +72,11 @@ public class FLBSocialCommandResource {
         LOGGER.info("Sending to FLB Node " + svr + " command " + createFLBPayload(command) + " tagged as " + tag);
         try {
             client = ClientBuilder.newClient();
-            client.target(svr).path(tag).request(MediaType.APPLICATION_JSON)
+            Response resp = client.target(svr).path(tag).request(MediaType.APPLICATION_JSON)
                     .buildPost(json(createFLBPayload(command))).invoke();
 
+            sent = (resp.getStatus() >= 200) && (resp.getStatus() < 300);
+            resp.close();
             client.close();
         } catch (Exception err) {
             LOGGER.warning(err.toString());
