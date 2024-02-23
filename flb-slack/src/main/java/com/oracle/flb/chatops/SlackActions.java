@@ -288,7 +288,7 @@ public class SlackActions implements ActionsImplInterface {
   }
 
   /*
-   * Provide the means to send messages to the socuial channel, so that we can
+   * Provide the means to send messages to the social channel, so that we can
    * confirm when we've managed to signal Fluent Bit
    */
   public boolean sendMessage(String message) {
