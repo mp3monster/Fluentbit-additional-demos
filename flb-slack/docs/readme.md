@@ -43,11 +43,13 @@ The Fluent Bit configuration currently makes use of the classic syntax and has t
 
 A test script that will mimic the Slack handler call is provided, which makes use of CURL - called **test-cmd.[bat|sh]**
 
-### Java/GraalVM Response Handler 
+### Java/GraalVM Response Handler (aka Social Agent)
 
 This has been built with the [Helidon](https://helidon.io/) framework so that the code can be *built to a native binary using [GraalVM](https://www.graalvm.org/)* for optimal performance and footprint or just run using Java (ideally Java21). Given the nature of the functionality, it could be deployed as a serverless solution (e.g., using *[OCI Functions](https://www.oracle.com/uk/cloud/cloud-native/functions/)*), a microservice in Kubernetes (such as [*OKE*](https://www.oracle.com/uk/cloud/cloud-native/container-engine-kubernetes/)), or a simple free-standing application.
 
 Helidon provides by default its own simple app server and has been configured to generate metrics for the endpoints it supports - **/social**
+
+The 
 
 The Java code is structured such that different implementations of the Social Channel could be implemented.
 
@@ -57,22 +59,24 @@ The app can take the following configuration information:
 
 | Configuration Name | Description                                                  | Example / Default Value | Mandatory |
 | ------------------ | ------------------------------------------------------------ | ----------------------- | --------- |
-| RETRYINTERVAL      |                                                              | 60                      |           |
-| RETRYCOUNT         |                                                              | 2                       |           |
+| OPS_RETRYINTERVAL  | The time between checking in with Slack to see if there is a command to processes. | 60                      |           |
+| OPS_RETRYCOUNT     | The number of attempts to check in. So with a retry of 2 and an interval of 60 means that if the instruction for Fluent Bit isn't provided within 2 minutes then all conversations in Slack will be ignored. | 2                       |           |
 | PORT               | The Port that the target Fluent Bit HTTP                     | 2020                    |           |
-| SLACKCHANNELID     | This is the true channel Id, rather than the user-friendly channel name |                         | Y         |
-| SLACKTOKEN         | The token that will authenticate the app with Slack          | xoxb-XXXXXXX            | Y         |
+| SLACK-CHANNEL-ID   | This is the true channel ID, rather than the user-friendly channel name |                         | Y         |
+| SLACK-CHANNEL-NAME | This is the user friendly name. Not implemented yet - but this can be used to obtain the channel ID. Currently defined to help differentiate the name and Id | myChannel               | N         |
+| SLACK-TOKEN        | The token that will authenticate the app with Slack          | xoxb-XXXXXXX            | Y         |
 | SLACKMSGLIMIT      |                                                              |                         |           |
-| SLACKTIMELIMIT     |                                                              |                         |           |
-
-
+| TESTFLB            | A boolean flag that, when set to true provides an additional URL that can be used. When enabled, we can invoke the URL `/social/testFLB` to trigger Fluent Bit as if an event had been identified.  The test makes use of the environment configuration values TESTFLB-COMMAND and TESTFLB_NODE. This makes it easier to test the associated script. |                         |           |
+| TESTFLB-COMMAND    | This defines the command to be sent to Fluent Bit when TESTFLB is used | test                    | N         |
+| TESTFLB-NODE       | This defines the FLB Node (including port number) of Fluent Bit when we want to mimic a detection. | 127.0.0.1:8090          | N         |
+| TESTFLB-TAG        | When using TESTFLB option, this provides the tag to be used with the invocation back to Fluent Bit | command                 | N         |
 
 ### Detecting the Response
 
 The agent is waiting for a response directed back to the agent e.g. t is then looking specifically looking for two value pairs in the response:
 
-- **FLB**:<script name without a post fix>
-- **FLBNode**:<node address>
+- **FLBCmd**:<script name without the cmd_ prefix or the file extension> e.g. test will trigger a script called `cmd_test.bat` or `cmd_test.sh` 
+- **FLBNode**:<node address including port number> Note if you use 127.0.0.1 then the social agent needs to be co-resident with the Fluent Bit node. Otherwise use the IP of Fluent Bit that is visible to the agent's deployment.
 
 > **Note**: By only accepting the name of a script to execute, we prevent arbitrary scripts from being invoked. This represents a means to provide security, but the framework could easily be extended to supply a script if this was deemed acceptable.
 
@@ -81,3 +85,27 @@ When these values are identified in the response then an HTTP call to the node u
 {\"cmd\":\"commandname\"}
 
 *Rather than the node, we could address the node via an incident ID, which the response handler could then look up, having previously recorded it with the response handler.*
+
+
+
+### Slack Setup Notes
+
+The following relates to both Fluent Bit and the Social Agent configuration.  Using the provided Fluent Bit configuration means you'll need the following environment variables defined:
+
+| Configuration Name | Description                                                  | Example / Default Value                         |
+| ------------------ | ------------------------------------------------------------ | ----------------------------------------------- |
+| SLACK-WEBHOOK      | This is needed by Fluent Bit's slack plugin. This is documented in the Slack APIS [here](https://api.slack.com/messaging/webhooks). | https://hooks.slack.com/services/blah/blah/blah |
+| CHAT-OPS-SVR       | This is the address of the Social Agent so that we can nudge it when an event has been sent to Slack. `127.0.0.1` can be used if the Fluent Bit and social agent are co-resident. | 127.0.0.1                                       |
+| CHAT-OPS-PORT      | The p[ort to use for the messaging to the agent. Thisd needs to be a numeric number | 8080                                            |
+
+#### Getting slack token etc
+
+Setting up the token is described in the Slack API documentation [here](https://api.slack.com/tutorials/tracks/getting-a-token). The App needs to be deployed to the channel we're going to use for this operation.
+
+#### Identifying the Slack Channel Id
+
+The simplest way to identify the Slack channel's ID is in the UI to select the relevant channel and right-click. This will present the menu, which includes the option View Channel Details as shown in these screenshots. At the bottom of the channel details is the ID of the channel (highlighted with the red box).
+
+![](./slack-right-click-menu-screenshot.png)
+
+![](./slack-channel-id-screenshot.png)
