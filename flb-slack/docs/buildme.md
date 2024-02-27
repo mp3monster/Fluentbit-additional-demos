@@ -148,4 +148,16 @@ archive by executing your build like this:
 mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 ```
 
-For more information on available configuration options see the helidon-maven-plugin documentation.
+For more information on available configuration options, see the *helidon-maven-plugin* documentation.
+
+
+
+# Slack Test Scripts
+
+To verify that Slack has got the correct configurations, there are a couple of test scripts (both .bat and .sh versions). To use these scripts you do need to use CURL and set the environment variables from the set-env,[bat|sh]  These scripts are:
+
+| Script Name                       | Purpose                                                      |
+| --------------------------------- | ------------------------------------------------------------ |
+| get-slack-conversation-curl       | This retrieves the last three lines of Slack conversation (unlike the App, which limits the retrieved conversation by time).  It includes a toggled property that can enable pretty formatting of the response. |
+| send-slack-test-conversation-curl | This sends a message to the channel. If permissions are correct you'll see a message from the app |
+
