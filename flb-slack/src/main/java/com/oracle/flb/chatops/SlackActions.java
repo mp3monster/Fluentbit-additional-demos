@@ -30,13 +30,13 @@ public class SlackActions implements ActionsImplInterface {
 
   private static final String CHANNEL_SLACK_ATTRIBUTE = "channel";
 
-  private static final String SLACKTIMELIMIT = "SLACK-TIME-LIMIT";
+  private static final String SLACKTIMELIMIT = "SLACK_TIME_LIMIT";
 
-  private static final String SLACKMSGLIMIT = "SLACK-MSG-LIMIT";
+  private static final String SLACKMSGLIMIT = "SLACK_MSG_LIMIT";
 
-  private static final String SLACKTOKEN = "SLACK-TOKEN";
+  private static final String SLACKTOKEN = "SLACK_TOKEN";
 
-  private static final String SLACKCHANNELID = "SLACK-CHANNEL-ID";
+  private static final String SLACKCHANNELID = "SLACK_CHANNEL_ID";
 
   private static final int DEFAULTMSGLIMIT = 5;
 

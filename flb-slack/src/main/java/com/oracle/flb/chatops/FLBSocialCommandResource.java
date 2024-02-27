@@ -44,10 +44,10 @@ public class FLBSocialCommandResource {
     private static final String FLB_SOCIAL = "FLBSocial"; // used for the logging naming
     private static final String NAME = "name";
     private static final String TESTFLB = "TESTFLB";
-    private static final String TESTFLB_TAG = "TESTFLB-TAG";
-    private static final String TESTFLB_PORT = "TESTFLB-PORT";
-    private static final String TESTFLB_COMMAND = "TESTFLB-COMMAND";
-    private static final String TESTFLB_NODE = "TESTFLB-NODE";
+    private static final String TESTFLB_TAG = "TESTFLB_TAG";
+    private static final String TESTFLB_PORT = "TESTFLB_PORT";
+    private static final String TESTFLB_COMMAND = "TESTFLB_COMMAND";
+    private static final String TESTFLB_NODE = "TESTFLB_NODE";
     private static final int DEFAULT_RETRY_COUNT = 2;
     private static final int DEFAULT_RETRY_INTERVAL = 60;
     private static final String FLB_DEFAULT_PORT = "2020";

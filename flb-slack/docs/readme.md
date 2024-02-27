@@ -62,14 +62,14 @@ The app can take the following configuration information:
 | OPS_RETRYINTERVAL  | The time between checking in with Slack to see if there is a command to processes. | 60                      |           |
 | OPS_RETRYCOUNT     | The number of attempts to check in. So with a retry of 2 and an interval of 60 means that if the instruction for Fluent Bit isn't provided within 2 minutes then all conversations in Slack will be ignored. | 2                       |           |
 | PORT               | The Port that the target Fluent Bit HTTP                     | 2020                    |           |
-| SLACK-CHANNEL-ID   | This is the true channel ID, rather than the user-friendly channel name |                         | Y         |
-| SLACK-CHANNEL-NAME | This is the user friendly name. Not implemented yet - but this can be used to obtain the channel ID. Currently defined to help differentiate the name and Id | myChannel               | N         |
-| SLACK-TOKEN        | The token that will authenticate the app with Slack          | xoxb-XXXXXXX            | Y         |
+| SLACK_CHANNEL_ID   | This is the true channel ID, rather than the user-friendly channel name |                         | Y         |
+| SLACK_CHANNEL_NAME | This is the user friendly name. Not implemented yet - but this can be used to obtain the channel ID. Currently defined to help differentiate the name and Id | myChannel               | N         |
+| SLACK_TOKEN        | The token that will authenticate the app with Slack          | xoxb-XXXXXXX            | Y         |
 | SLACKMSGLIMIT      |                                                              |                         |           |
 | TESTFLB            | A boolean flag that, when set to true provides an additional URL that can be used. When enabled, we can invoke the URL `/social/testFLB` to trigger Fluent Bit as if an event had been identified.  The test makes use of the environment configuration values TESTFLB-COMMAND and TESTFLB_NODE. This makes it easier to test the associated script. |                         |           |
-| TESTFLB-COMMAND    | This defines the command to be sent to Fluent Bit when TESTFLB is used | test                    | N         |
-| TESTFLB-NODE       | This defines the FLB Node (including port number) of Fluent Bit when we want to mimic a detection. | 127.0.0.1:8090          | N         |
-| TESTFLB-TAG        | When using TESTFLB option, this provides the tag to be used with the invocation back to Fluent Bit | command                 | N         |
+| TESTFLB_COMMAND    | This defines the command to be sent to Fluent Bit when TESTFLB is used | test                    | N         |
+| TESTFLB_NODE       | This defines the FLB Node (including port number) of Fluent Bit when we want to mimic a detection. | 127.0.0.1:8090          | N         |
+| TESTFLB_TAG        | When using TESTFLB option, this provides the tag to be used with the invocation back to Fluent Bit | command                 | N         |
 
 ### Detecting the Response
 
@@ -94,9 +94,9 @@ The following relates to both Fluent Bit and the Social Agent configuration.  Us
 
 | Configuration Name | Description                                                  | Example / Default Value                         |
 | ------------------ | ------------------------------------------------------------ | ----------------------------------------------- |
-| SLACK-WEBHOOK      | This is needed by Fluent Bit's slack plugin. This is documented in the Slack APIS [here](https://api.slack.com/messaging/webhooks). | https://hooks.slack.com/services/blah/blah/blah |
-| CHAT-OPS-SVR       | This is the address of the Social Agent so that we can nudge it when an event has been sent to Slack. `127.0.0.1` can be used if the Fluent Bit and social agent are co-resident. | 127.0.0.1                                       |
-| CHAT-OPS-PORT      | The p[ort to use for the messaging to the agent. Thisd needs to be a numeric number | 8080                                            |
+| SLACK_WEBHOOK      | This is needed by Fluent Bit's slack plugin. This is documented in the Slack APIS [here](https://api.slack.com/messaging/webhooks). | https://hooks.slack.com/services/blah/blah/blah |
+| CHAT_OPS_SVR       | This is the address of the Social Agent so that we can nudge it when an event has been sent to Slack. `127.0.0.1` can be used if the Fluent Bit and social agent are co-resident. | 127.0.0.1                                       |
+| CHAT_OPS_PORT      | The port to use for the messaging to the agent. This needs to be a numeric number | 8080                                            |
 
 #### Getting slack token etc
 
@@ -109,3 +109,4 @@ The simplest way to identify the Slack channel's ID is in the UI to select the r
 ![](./slack-right-click-menu-screenshot.png)
 
 ![](./slack-channel-id-screenshot.png)
+
