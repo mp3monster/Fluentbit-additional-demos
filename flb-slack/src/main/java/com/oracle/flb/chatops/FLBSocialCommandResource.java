@@ -40,7 +40,8 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @ApplicationScoped
 @Path("/social")
 public class FLBSocialCommandResource {
-    private static final String FLB_SOCIAL = "FLBSocial";
+    private static final String FALSE = "FALSE";
+    private static final String FLB_SOCIAL = "FLBSocial"; // used for the logging naming
     private static final String NAME = "name";
     private static final String TESTFLB = "TESTFLB";
     private static final String TESTFLB_TAG = "TESTFLB-TAG";
@@ -296,7 +297,7 @@ public class FLBSocialCommandResource {
     @Counted(name = FLBCommandMetrics.ALL_SOCIALS_NAME, absolute = true, description = FLBCommandMetrics.ALL_SOCIALS_DESCRIPTION)
     @Timed(name = FLBCommandMetrics.SOCIALS_TIMER_NAME, description = FLBCommandMetrics.SOCIALS_TIMER_DESCRIPTION, unit = MetricUnits.HOURS, absolute = true)
     public String postTestFLB(String entity) {
-        boolean testFLB = Boolean.parseBoolean(myEnvs.getOrDefault(TESTFLB, "FALSE"));
+        boolean testFLB = Boolean.parseBoolean(myEnvs.getOrDefault(TESTFLB, FALSE));
         LOGGER.info("Test FLB allowed = " + testFLB);
         if (testFLB) {
 
