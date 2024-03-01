@@ -6,15 +6,15 @@ This is an MVP to illustrate the possibility and explore the security considerat
 
 *Note text in italics in the following documentation represents functionality not yet implemented.*
 
-### PreRequisities
+## Pre-requisites
 
 To build and run the following demo, you'll need:
 
 - Slack with admin privileges to:
-  - create and configure an API token 
+  - create and configure an API token
   - Create a channel to communicate with Fluent Bit with
 - Compute platform to run:
-  -  the Java/GraalVM application 
+  - the Java/GraalVM application
   - one or more compute nodes to run Fluent Bit on (can be containers)
   - Log simulator/event generation capability
   - CURL for testing
@@ -22,15 +22,13 @@ To build and run the following demo, you'll need:
   - Maven for compiling the code
   - Java (ideally Java21 to benefit from the virtual thread optimizations)
 
-# Solution 
+## Solution
 
 The solution operates in the following manner:
 
-![](./flow-diagram.png)
+![Flow diagram](./flow-diagram.png)
 
-
-
-### Fluent Bit
+## Fluent Bit
 
 Fluent Bit has two paths to handle:
 
@@ -39,7 +37,7 @@ Fluent Bit has two paths to handle:
 
 The Fluent Bit resources for this all reside within the folder **../fluentbit**.
 
-The Fluent Bit configuration currently makes use of the classic syntax and has the Lua scripting deployed alongside it. 
+The Fluent Bit configuration currently makes use of the classic syntax and has the Lua scripting deployed alongside it.
 
 A test script that will mimic the Slack handler call is provided, which makes use of CURL - called **test-cmd.[bat|sh]**
 
@@ -49,11 +47,9 @@ This has been built with the [Helidon](https://helidon.io/) framework so that th
 
 Helidon provides by default its own simple app server and has been configured to generate metrics for the endpoints it supports - **/social**
 
-The 
-
 The Java code is structured such that different implementations of the Social Channel could be implemented.
 
-##### Configuration Requirements
+## Configuration Requirements
 
 The app can take the following configuration information:
 
@@ -71,42 +67,41 @@ The app can take the following configuration information:
 | TESTFLB_NODE       | This defines the FLB Node (including port number) of Fluent Bit when we want to mimic a detection. | 127.0.0.1:8090          | N         |
 | TESTFLB_TAG        | When using TESTFLB option, this provides the tag to be used with the invocation back to Fluent Bit | command                 | N         |
 
-### Detecting the Response
+## Detecting the Response
 
 The agent is waiting for a response directed back to the agent e.g. t is then looking specifically looking for two value pairs in the response:
 
-- **FLBCmd**:<script name without the cmd_ prefix or the file extension> e.g. test will trigger a script called `cmd_test.bat` or `cmd_test.sh` 
-- **FLBNode**:<node address including port number> Note if you use 127.0.0.1 then the social agent needs to be co-resident with the Fluent Bit node. Otherwise use the IP of Fluent Bit that is visible to the agent's deployment.
+- **FLBCmd**:`<script name without the cmd_ prefix or the file extension>` e.g. test will trigger a script called `cmd_test.bat` or `cmd_test.sh`
+- **FLBNode**:`<node address including port number>` Note if you use 127.0.0.1 then the social agent needs to be co-resident with the Fluent Bit node. Otherwise use the IP of Fluent Bit that is visible to the agent's deployment.
 
 > **Note**: By only accepting the name of a script to execute, we prevent arbitrary scripts from being invoked. This represents a means to provide security, but the framework could easily be extended to supply a script if this was deemed acceptable.
 
 When these values are identified in the response then an HTTP call to the node using the preconfigured port is invoked with a JSON payload in the following form:
 
+```json
 {\"cmd\":\"commandname\"}
+```
 
 *Rather than the node, we could address the node via an incident ID, which the response handler could then look up, having previously recorded it with the response handler.*
 
-
-
-### Slack Setup Notes
+## Slack Setup Notes
 
 The following relates to both Fluent Bit and the Social Agent configuration.  Using the provided Fluent Bit configuration means you'll need the following environment variables defined:
 
 | Configuration Name | Description                                                  | Example / Default Value                         |
 | ------------------ | ------------------------------------------------------------ | ----------------------------------------------- |
-| SLACK_WEBHOOK      | This is needed by Fluent Bit's slack plugin. This is documented in the Slack APIS [here](https://api.slack.com/messaging/webhooks). | https://hooks.slack.com/services/blah/blah/blah |
+| SLACK_WEBHOOK      | This is needed by Fluent Bit's slack plugin. This is documented in the Slack APIS [here](https://api.slack.com/messaging/webhooks). | <https://hooks.slack.com/services/blah/blah/blah> |
 | CHAT_OPS_SVR       | This is the address of the Social Agent so that we can nudge it when an event has been sent to Slack. `127.0.0.1` can be used if the Fluent Bit and social agent are co-resident. | 127.0.0.1                                       |
 | CHAT_OPS_PORT      | The port to use for the messaging to the agent. This needs to be a numeric number | 8080                                            |
 
-#### Getting slack token etc
+### Getting slack token etc
 
 Setting up the token is described in the Slack API documentation [here](https://api.slack.com/tutorials/tracks/getting-a-token). The App needs to be deployed to the channel we're going to use for this operation.
 
-#### Identifying the Slack Channel Id
+### Identifying the Slack Channel Id
 
 The simplest way to identify the Slack channel's ID is in the UI to select the relevant channel and right-click. This will present the menu, which includes the option View Channel Details as shown in these screenshots. At the bottom of the channel details is the ID of the channel (highlighted with the red box).
 
-![](./slack-right-click-menu-screenshot.png)
+![Right click menu](./slack-right-click-menu-screenshot.png)
 
-![](./slack-channel-id-screenshot.png)
-
+![Channel ID](./slack-channel-id-screenshot.png)

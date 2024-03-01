@@ -17,14 +17,14 @@ java -jar target/flb-chatops.jar
 
 Basic:
 
-```
+```bash
 curl -X GET http://localhost:8080/simple-greet
 Hello World!
 ```
 
 JSON:
 
-```
+```bash
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
@@ -39,7 +39,7 @@ curl -X GET http://localhost:8080/greet/Jose
 
 ## Try metrics
 
-```
+```bash
 # Prometheus Format
 curl -s -X GET http://localhost:8080/metrics
 # TYPE base:gc_g1_young_generation_count gauge
@@ -53,7 +53,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 
 ## Try health
 
-```
+```bash
 curl -s -X GET http://localhost:8080/health
 {"outcome":"UP",...
 
@@ -65,7 +65,7 @@ The generation of native binaries requires an installation of GraalVM 22.1.0+.
 
 You can build a native binary using Maven as follows:
 
-```
+```bash
 mvn -Pnative-image install -DskipTests
 ```
 
@@ -76,13 +76,13 @@ project generation phase.
 
 ## Building the Docker Image
 
-```
+```bash
 docker build -t flb-chatops .
 ```
 
 ## Running the Docker Image
 
-```
+```bash
 docker run --rm -p 8080:8080 flb-chatops:latest
 ```
 
@@ -94,14 +94,14 @@ If you don’t have access to a Kubernetes cluster, you can [install one](https:
 
 ### Verify connectivity to cluster
 
-```
+```bash
 kubectl cluster-info                        # Verify which cluster
 kubectl get pods                            # Verify connectivity to cluster
 ```
 
 ### Deploy the application to Kubernetes
 
-```
+```bash
 kubectl create -f app.yaml                  # Deploy application
 kubectl get pods                            # Wait for quickstart pod to be RUNNING
 kubectl get service  flb-chatops         # Get service info
@@ -112,7 +112,7 @@ port number (the NodePort) instead of 8080.
 
 After you’re done, cleanup.
 
-```
+```bash
 kubectl delete -f app.yaml
 ```
 
@@ -120,7 +120,7 @@ kubectl delete -f app.yaml
 
 Build the custom runtime image using the jlink image profile:
 
-```
+```bash
 mvn package -Pjlink-image
 ```
 
@@ -130,7 +130,7 @@ After the build completes it will report some statistics about the build includi
 The target/flb-chatops-jri directory is a self contained custom image of your application. It contains your application,
 its runtime dependencies and the JDK modules it depends on. You can start your application using the provide start script:
 
-```
+```bash
 ./target/flb-chatops-jri/bin/start
 ```
 
@@ -144,15 +144,13 @@ The size of the CDS archive is reported at the end of the build output.
 If you’d rather have a smaller image size (with a slightly increased startup time) you can skip the creation of the CDS
 archive by executing your build like this:
 
-```
+```bash
 mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 ```
 
 For more information on available configuration options, see the *helidon-maven-plugin* documentation.
 
-
-
-# Slack Test Scripts
+## Slack Test Scripts
 
 To verify that Slack has got the correct configurations, there are a couple of test scripts (both .bat and .sh versions). To use these scripts you do need to use CURL and set the environment variables from the set-env,[bat|sh]  These scripts are:
 
@@ -160,4 +158,3 @@ To verify that Slack has got the correct configurations, there are a couple of t
 | --------------------------------- | ------------------------------------------------------------ |
 | get-slack-conversation-curl       | This retrieves the last three lines of Slack conversation (unlike the App, which limits the retrieved conversation by time).  It includes a toggled property that can enable pretty formatting of the response. |
 | send-slack-test-conversation-curl | This sends a message to the channel. If permissions are correct you'll see a message from the app |
-
