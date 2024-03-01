@@ -94,9 +94,13 @@ The following relates to both Fluent Bit and the Social Agent configuration.  Us
 | CHAT_OPS_SVR       | This is the address of the Social Agent so that we can nudge it when an event has been sent to Slack. `127.0.0.1` can be used if the Fluent Bit and social agent are co-resident. | 127.0.0.1                                       |
 | CHAT_OPS_PORT      | The port to use for the messaging to the agent. This needs to be a numeric number | 8080                                            |
 
-### Getting slack token etc
+### Getting slack token
 
 Setting up the token is described in the Slack API documentation [here](https://api.slack.com/tutorials/tracks/getting-a-token). The App needs to be deployed to the channel we're going to use for this operation.
+
+The token needs to have various oauth permissions and an incoming webhook set up for the app.
+
+The bot needs to be invited to the channel as well.
 
 ### Identifying the Slack Channel Id
 
