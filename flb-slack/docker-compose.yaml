@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+  fluent-bit:
+    image: fluent/fluent-bit:2.2.2
+    ports:
+      # HTTP server communication
+      - 8090:8090
+      # Inject alerts via HTTP
+      - 8095:8095
+    volumes:
+      - ./fluent-bit-config:/fluent-bit/etc/
+  http-slack-server:
+    build: ./Dockerfile
+    ports:
+      - 8080:8080
