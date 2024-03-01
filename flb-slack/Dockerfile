@@ -24,8 +24,6 @@ RUN mvn package -Dmaven.test.skip -Declipselink.weave.skip -Declipselink.weave.s
 ADD src src
 RUN mvn package -DskipTests
 
-RUN echo "done!"
-
 # 2nd stage, build the runtime image
 FROM container-registry.oracle.com/java/openjdk:21
 WORKDIR /helidon
