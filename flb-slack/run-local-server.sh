@@ -1,3 +1,4 @@
+#!/bin/sh
 clear
 mvn -e clean package
 echo -- ready to run --
